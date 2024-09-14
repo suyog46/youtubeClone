@@ -15,4 +15,3 @@ connectDb().then(()=>{
     console.log("error in connecting",error)
 })
 
-
