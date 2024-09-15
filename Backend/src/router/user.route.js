@@ -1,5 +1,5 @@
 import Router from "router";
-import { register,login,logout, getCurrentUser, updateProfile, updateProfilePicture, getUserChannelProfile, getWatchHistory } from "../controller/user.controller.js";
+import { register,login,logout, getCurrentUser, updateProfile, updateProfilePicture, getUserChannelProfile, getWatchHistory, generateAccessToken, changeCurrentPassword } from "../controller/user.controller.js";
 import upload from "../middleware/multer.js";
 import verifyUser from "../middleware/auth.js";
 const router=Router()
@@ -9,12 +9,11 @@ router.route("/register").post(upload.fields(
     maxCount:1
 }]
 ),register)
-
 router.route("/login").post(login)
-
 router.route("/logout").post(verifyUser,logout)
-// router.route("/refreshToken").post(r)   yeuta refresh token generate garna lai 
-// router.route("/changePassword").post(verifyUser,change)
+
+router.route("/accessToken").post(verifyUser,generateAccessToken)   
+router.route("/changePassword").post(verifyUser,changeCurrentPassword)
 router.route("/getCurrentUser").get(verifyUser,getCurrentUser)
 router.route("/updateAccount").patch(verifyUser,updateProfile)
 router.route("/updateProfilePicture").patch(verifyUser,upload.single("userProfile"),updateProfilePicture)

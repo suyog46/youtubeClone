@@ -79,6 +79,7 @@ console.log("user is",user)
 
 const{access,refresh}=await generateAccessRefreshToken(user)
 console.log("accessToken is",access)
+console.log("refreshToken is",refresh)
 const options={
     httpOnly:true,
     secure:true
@@ -111,6 +112,35 @@ return res
 .json(new ApiResponse(200,{},"user logged out successfully"))
 })
 
+const generateAccessToken=asyncHandler(async(req,res)=>{
+   
+    const refreshToken=req.cookies.refreshToken
+    if(!refreshToken){
+        throw new ApiError(401,"user not authorized")
+    }
+    // const user=req.user
+    console.log("user is ",user)
+    if(!user){
+        throw new ApiError(404,"user not found in request")
+    }
+    const dbUser=await userModel.findById(user._id)
+   const verifiedUser= await dbUser.verifyUser(refreshToken);
+   if(!verifiedUser){
+            throw new ApiError(401,"user not verified")
+   }
+  const newAccessToken=await dbUser.generateAccessToken()
+if(!newAccessToken){
+    throw new ApiError(400,"there was error in creating new accesstoken")
+}
+  const options={
+    httpOnly:true,
+    extended:true
+  }
+res.cookie("accessToken",newAccessToken,options)
+return res
+.status(200)
+.json(new ApiResponse(200,{},"accessToken regenerated successfully"))
+})
 const updateProfile=asyncHandler(async(req,res)=>{
     const{username,email}=req.body
     //yeuta matra pathayo vani ko logic
@@ -269,6 +299,21 @@ return res
 .json(new ApiResponse(200,user[0].watchHistory,"Watch History is responded"))
 
 })
+const changeCurrentPassword=asyncHandler(async(req,res)=>{
+    const {oldPassword,newPassword}=req.body
+
+const user=await User.findById(req?.user._id) //middlware bata req.user banauna milxa 
+const password=user.isPasswordCorrect(oldPassword)
+if(!password){
+throw new ApiError(400,"Invalid password")
+}
+user.password=password
+await user.save({validateBeforeSave:false})
+return res
+.status(200)
+.json(new ApiResponse(200,{},"password Changed successfully"))
+
+})
 export {register,
     login,
     logout,
@@ -276,5 +321,7 @@ export {register,
     updateProfilePicture,
     getCurrentUser,
     getUserChannelProfile,
-    getWatchHistory
+    getWatchHistory,
+    generateAccessToken,
+    changeCurrentPassword
 }

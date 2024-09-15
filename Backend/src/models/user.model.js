@@ -43,7 +43,7 @@ return await bcrypt.compare(password,this.password)
 
 userSchema.methods.generateAccessToken=async function( ){
     const accessToken=await jwt.sign({
-        id:this.email,
+       _id:this._id,
         username:this.username,
         email:this.email
     },process.env.ACCESS_TOKEN_SECRET,
@@ -52,6 +52,7 @@ userSchema.methods.generateAccessToken=async function( ){
     })
     return accessToken
 }
+
 userSchema.methods.generateRefreshToken=async function( ){
   const refreshToken= await  jwt.sign({
         id:this.email,
