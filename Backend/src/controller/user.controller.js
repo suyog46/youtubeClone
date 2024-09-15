@@ -3,7 +3,7 @@ import userModel from "../models/user.model.js";
 import { ApiError } from "../utils/apierror.js";
 import { cloudresult } from "../utils/Cloudinary.js";
 import ApiResponse from "../utils/ApiResponse.js";
-
+import mongoose from "mongoose";
 
 const register=asyncHandler(async(req,res)=>{
     const {username,email,password}=req.body
@@ -110,4 +110,171 @@ return res
 .clearCookie("refreshToken",options)
 .json(new ApiResponse(200,{},"user logged out successfully"))
 })
-export {register,login,logout}
+
+const updateProfile=asyncHandler(async(req,res)=>{
+    const{username,email}=req.body
+    //yeuta matra pathayo vani ko logic
+    const id=req.user._id
+    const user=await userModel.findByIdAndUpdate(id,{
+        $set:{
+            username:username,
+            email:email
+        }
+    },
+    {$new:true}
+).select("-password -refreshToken")
+res.
+status(200).
+json(new ApiResponse(201,user,"data updated successfully"))
+})
+
+const updateProfilePicture=asyncHandler(async(req,res)=>{
+
+    const profilePath=req.files?.userProfile[0].path
+    if(!profilePath){
+        throw new ApiError(404,"profilepath to be updated not found")
+    }
+    const imagePath=await cloudresult(profilePath)
+    if(!imagePath){
+        throw new ApiError(404,"imagepath of cloudinary response not found")
+    }
+    const user=await userModel.findByIdAndUpdate(req.user?._id,{
+        $set:{
+            userProfile:imagePath.url
+        }
+    },{
+       $new:true
+    })
+    return res
+    .status(200)
+    .json(new ApiResponse(200,user,"profile picture updated successfully!"))
+})
+const getCurrentUser=asyncHandler(async(req,res)=>{
+    return res
+    .status(200)
+    .json(200,req.user,"current user have been fetched")
+})
+
+const getUserChannelProfile=asyncHandler(async(req,res)=>{
+const {username}=req.params;
+if(!username?.trim()){
+    throw new ApiError(404,"username is missing in url parameter")
+}
+// userModel.find({username})
+// userModel.aggregate([{},{}])
+const channel=await userModel.aggregate([
+    {
+    $match:{
+        username:username?.tolowercase()
+    }
+},{
+    $lookup:{
+        from:"subscriptions", //model ko nam ra tyo lowercase ra plural ma hunxa
+        localField:"_id",
+        foreignField:"channel",
+        as:"subscribers"
+    }
+},
+{
+    $lookup:{
+        from:"subscriptions",
+        localField:"_id",
+        foreignField:"subscriber",
+        as:"subscribedTo"
+    }
+},
+{
+    $addFields:{
+        subscribersCount:{
+            $size:"$subscribers"
+        },
+        subscribedToCuunt:{
+            $size:"$subscribedTo"
+        },
+        isSubscribed:{
+            $cond:{
+                if:{$in:[req.user?._id,"$subscribers.subscriber"]},
+                then:true,
+                else:false
+                }
+        }
+    }
+},
+{
+    $project:{
+        username:1,
+        subscribersCount:1,
+        subscribedToCount:1,
+        isSubscribed:1,
+        email:1,
+        userProfile:1
+    
+    }
+}])
+console.log("channel is",channel)
+if(!channel?.length){
+    throw new ApiError(404,"channel does not exist")
+}
+return res
+.status(200)
+.json(new ApiResponse(200,channel[0],"User channel info fetched successfully"))
+})
+
+const getWatchHistory=asyncHandler(async(req,res)=>{
+const user=await userModel.aggregate([
+    {$match:{
+        _id:new mongoose.Types.ObjectId(req.user?._id)//mongoose ma object id haru string ma store hunxa .so to cakculate exact id
+
+    }
+
+    },
+    {
+        $lookup:{
+            from:"video",
+            localField:"watchHistory",
+            foreignField:"_id",
+            as:"watchHistory",
+            pipeline:[  //nested pipeline
+                {
+                    $lookup:{
+                        from:"user",
+                        localField:"owner",
+                        foreignField:"_id",
+                        as:"owner",
+                        pipeline:[ //npw this pipeline will be in owner field 
+                            {
+                                $project:{
+                                    username:1,
+                                    email:1,
+                                    userProfile:1
+                                }
+                            },
+                            { //array ma aauxa ,so ellai milauna ,array vitra ko object nikalni 
+                               $addFields:{
+                             owner:{
+                                 $first:"$owner"
+                             }
+                               }    
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    },
+
+])
+return res
+.status(200)
+.json(new ApiResponse(200,user[0].watchHistory,"Watch History is responded"))
+
+})
+export {register,
+    login,
+    logout,
+    updateProfile,
+    updateProfilePicture,
+    getCurrentUser,
+    getUserChannelProfile,
+    getWatchHistory
+}
