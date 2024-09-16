@@ -16,8 +16,12 @@ router.route("/updateProfile").patch(verifyUser,updateProfile)
 router.route("/changePassword").post(verifyUser,changeCurrentPassword)
 router.route("/getCurrentUser").get(verifyUser,getCurrentUser)
 router.route("/updateProfilePicture").post(verifyUser,upload.single("userProfile"),updateProfilePicture)
+router.route("/channelinfo/:username").get(verifyUser,getUserChannelProfile)
 
 // router.route("") cover image update garni
-router.route("/channelinfo/:username").get(verifyUser,getUserChannelProfile)
 router.route("/watchHistory").get(verifyUser,getWatchHistory)
+
+
+
+
 export default  router

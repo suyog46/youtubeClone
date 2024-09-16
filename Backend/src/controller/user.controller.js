@@ -221,7 +221,7 @@ if(!username?.trim()){
 const channel=await userModel.aggregate([
     {
     $match:{
-        username:username?.tolowercase()
+        username:username?.toLowerCase()
     }
 },{
     $lookup:{

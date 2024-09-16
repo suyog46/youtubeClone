@@ -15,6 +15,6 @@ type:"module"
 
 
  for testting
- username:test
+ username:five
  email:test@gmail.com
- pasword:Test@123
+ pasword:Test1@123
