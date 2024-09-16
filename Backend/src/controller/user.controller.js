@@ -4,6 +4,7 @@ import { ApiError } from "../utils/apierror.js";
 import { cloudresult } from "../utils/Cloudinary.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
+import jwt from "jsonwebtoken"
 
 const register=asyncHandler(async(req,res)=>{
     const {username,email,password}=req.body
@@ -94,12 +95,12 @@ status(200)
 
 const logout=asyncHandler(async(req,res)=>{
    const user=req.user
-userModel.findByIdAndUpdate(user._id,{
-    $set:{
-        refreshToken:undefined
+ 
+const loggedoutUser=await userModel.findByIdAndUpdate(user._id,{
+    $unset: {
+        refreshToken: 1 // this removes the field from document
     }
 },{new:true})
-
 const options={
     httpOnly:true,
     secure:true
@@ -118,13 +119,16 @@ const generateAccessToken=asyncHandler(async(req,res)=>{
     if(!refreshToken){
         throw new ApiError(401,"user not authorized")
     }
-    // const user=req.user
+    const user=req.user
     console.log("user is ",user)
+    console.log("refresh token is ",refreshToken)
+    console.log("refresh token secret is",process.env.REFRESH_TOKEN_SECRET)
     if(!user){
         throw new ApiError(404,"user not found in request")
     }
     const dbUser=await userModel.findById(user._id)
-   const verifiedUser= await dbUser.verifyUser(refreshToken);
+   
+const verifiedUser= jwt.verify(refreshToken,process.env.REFRESH_TOKEN_SECRET)
    if(!verifiedUser){
             throw new ApiError(401,"user not verified")
    }
@@ -143,8 +147,14 @@ return res
 })
 const updateProfile=asyncHandler(async(req,res)=>{
     const{username,email}=req.body
+    //json wa form bata pathauda aayena but comes through xx-url encoded
+    console.log("username and email is ",username,email)
     //yeuta matra pathayo vani ko logic
+if(!(username||email)){
+    throw new ApiError(404,"user profile to be updated not found")
+}
     const id=req.user._id
+    console.log("username to be upidatded",username,email)
     const user=await userModel.findByIdAndUpdate(id,{
         $set:{
             username:username,
@@ -157,10 +167,31 @@ res.
 status(200).
 json(new ApiResponse(201,user,"data updated successfully"))
 })
+const changeCurrentPassword=asyncHandler(async(req,res)=>{
+    const {oldPassword,newPassword}=req.body
 
+const user=await userModel.findById(req?.user._id) //middlware bata req.user banauna milxa 
+const password=user.isPasswordCorrect(oldPassword)
+if(!password){
+throw new ApiError(400,"Invalid password")
+}
+user.password=password
+await user.save({validateBeforeSave:false})
+return res
+.status(200)
+.json(new ApiResponse(200,{},"password Changed successfully"))
+
+})
+
+const getCurrentUser=asyncHandler(async(req,res)=>{
+    const user=req.user
+    return res
+    .status(200)
+    .json(new ApiResponse(200,user,"current user have been fetched"))
+})
 const updateProfilePicture=asyncHandler(async(req,res)=>{
-
-    const profilePath=req.files?.userProfile[0].path
+//patch bata milena
+    const profilePath=req.file.path
     if(!profilePath){
         throw new ApiError(404,"profilepath to be updated not found")
     }
@@ -178,11 +209,6 @@ const updateProfilePicture=asyncHandler(async(req,res)=>{
     return res
     .status(200)
     .json(new ApiResponse(200,user,"profile picture updated successfully!"))
-})
-const getCurrentUser=asyncHandler(async(req,res)=>{
-    return res
-    .status(200)
-    .json(200,req.user,"current user have been fetched")
 })
 
 const getUserChannelProfile=asyncHandler(async(req,res)=>{
@@ -297,21 +323,6 @@ const user=await userModel.aggregate([
 return res
 .status(200)
 .json(new ApiResponse(200,user[0].watchHistory,"Watch History is responded"))
-
-})
-const changeCurrentPassword=asyncHandler(async(req,res)=>{
-    const {oldPassword,newPassword}=req.body
-
-const user=await User.findById(req?.user._id) //middlware bata req.user banauna milxa 
-const password=user.isPasswordCorrect(oldPassword)
-if(!password){
-throw new ApiError(400,"Invalid password")
-}
-user.password=password
-await user.save({validateBeforeSave:false})
-return res
-.status(200)
-.json(new ApiResponse(200,{},"password Changed successfully"))
 
 })
 export {register,

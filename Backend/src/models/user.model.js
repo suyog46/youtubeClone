@@ -62,14 +62,14 @@ userSchema.methods.generateRefreshToken=async function( ){
     })
     return refreshToken
 }
-userSchema.methods.verifyUser=async function(refreshToken){
-try {
-       const userVerify= await jwt.verify(this.refreshToken,refreshToken)
-       return userVerify
-} catch (error) {
-    console.log("there was error in matching the token",error.message)
-}
-}
+// userSchema.methods.verifyUser=async function(refreshToken){
+// try {
+//        const userVerify= await jwt.verify(this.refreshToken,refreshToken)
+//        return userVerify
+// } catch (error) {
+//     console.log("there was error in matching the token",error.message)
+// }
+// }
 
 const userModel=mongoose.model("user",userSchema)
 export default userModel
