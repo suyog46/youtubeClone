@@ -6,6 +6,10 @@ import { videoModel } from "../models/video.model.js";
 
 const publishVideo=asyncHandler(async(req,res)=>{
     const{title,description}=req.body
+    const user=req.user
+    if(!user){
+        throw new ApiError(404,"there was error in fetching user data")
+    }
     if(!(title||description)){
         throw new ApiError(404,"title or description not found")
     }
@@ -35,7 +39,8 @@ const createdVideo=await videoModel.create({
     description,
     videoFile:fvideoPath.url,
     thumbnail:fthumbnailPath.url,
-    duration:fvideoPath.duration
+    duration:fvideoPath.duration,
+    owner:user._id
 })
 if(!createdVideo){
     throw new ApiError(400,"errror in puhsing video data to the db")
@@ -45,4 +50,153 @@ return res
 .json(new ApiResponse(201,createdVideo,"user video data pushed to db succesfull!"))
 })
 
-export {publishVideo}
+const getAllVideos=asyncHandler(async(req,res)=>{
+    const page=req.query.page||1;
+    const limit=req.query.limit||3;
+    const query=req.query.query||'';
+    const sortType=req.query.sort||'asc';
+    const sortBy=req.query.sortBy||'createdAt';
+
+    const pageNumber=parseInt(page);
+    const limitNumber=parseInt(limit);
+    const sort= sortType === 'asc' ? 1 : -1 ;
+
+        
+    const matchStage = query?{ title:{ $regex: query, $options: 'i' } }  :{};  //$options:i for case insesitive
+
+      const result = await videoModel.aggregate( [
+    {
+          $match: matchStage
+        },
+        {
+          $sort: { [sortBy]:sort }  // Sort based on the provided field and order. Use square brackets when you want to dynamically assign an object key based on a variable’s value.
+        },
+        {
+          $skip: (pageNumber - 1) * limitNumber  // Skip the results for previous pages
+        },
+        {
+          $limit: limitNumber  // Limit the results to the specified page size
+        },{
+            $lookup:  {
+                from:"users",
+            localField:"owner",
+            foreignField:"_id",
+            as:"result"
+        }
+    } ]  );
+
+      if (result.length === 0) { //array return garxa ,ani empty pani huna sakxa
+        throw new ApiError(404, "No videos found matching the query");
+    }
+
+    const totalCount = await videoModel.aggregate([
+        {
+          $match: matchStage
+        },
+        {
+          $count: "total"
+        }
+      ]);
+
+    
+      if(!totalCount){
+throw new ApiError(404,"error in counting values")
+      }
+
+  const totalResult=totalCount[0] ? totalCount[0].total : 0; 
+
+if(!result){
+    throw new ApiError(400,"there was error in retrieving the video data")
+}
+return res
+.status(200)
+.json(new ApiResponse(200,{result,totalResult},"video retrieved succesfully"))
+})
+
+
+const getVideoById   = asyncHandler(async (req, res) => {
+    const { videoId } = req.params
+    if(!videoId){
+        throw new ApiError(404,"videoId not found in the request")
+    }
+    const objectId = mongoose.Types.ObjectId(videoId);
+
+    const videos =await videoModel.aggregate(
+        [
+            {$match:{
+                _id:objectId
+            }},
+            {
+                $lookup:  {
+                    from:"users",
+                localField:"owner",
+                foreignField:"_id",
+                as:"result"
+            }
+        }
+        ]
+    )
+    if(!videos){
+        throw new ApiError(404,"error in fetching the videos")
+    }
+    return res
+    .status(200)
+    .json(new ApiResponse(200,videos,"video by id fetched successfully"))
+})
+
+
+const updateVideo = asyncHandler(async (req, res) => {
+    const { videoId } = req.params
+        if(!videoId){
+            throw new ApiError(404,"videoid not found")
+        }  
+        
+    const{title,description}=req.body
+    if(!(title)||description){
+        throw new ApiError(404,"title or description to be updated not found")
+    }
+    const thumbnail=req.file?.thumbnail[0].path
+    if(!thumbnail){
+        throw new ApiError(404,"thumbnail not found in the request file")
+    }
+    const thumbnailPath=await cloudresult(thumbnail)
+    const video=await videoModel.findByIdAndUpdate(videoId,{
+        $set:{
+            thumbnail:thumbnailPath.url,
+            title:title,
+            description:description,
+        }
+    },{
+        $new:true
+    })
+    if(!video){
+        throw new ApiError(404,"error in updating the video data")
+    }
+    return res
+    .status(200)
+    .json(new ApiResponse(200,video,"video updated successfully "))
+})
+
+const deleteVideo = asyncHandler(async (req, res) => {
+    const { videoId } = req.params;
+
+    if (!videoId) {
+        throw new ApiError(400, "videoId not found in the request");
+    }
+
+  
+    const video = await videoModel.findByIdAndDelete(videoId);
+
+    
+    if (!video) {  //delete vaye pani tesko delete hunu vanda agadi ko result chai contain garxa
+        throw new ApiError(404, "Video not found"); 
+    }
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, null, "Video deleted successfully"));
+});
+
+//user le video hide garexa ki dekhauni garera rakhexa vnni controller
+
+export {publishVideo,getAllVideos, getVideoById, updateVideo, deleteVideo}

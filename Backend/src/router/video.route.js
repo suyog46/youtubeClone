@@ -1,7 +1,7 @@
 import Router from "router";
 import upload from "../middleware/multer.js";
 import verifyUser from "../middleware/auth.js";
-import { publishVideo } from "../controller/video.controller.js";
+import { deleteVideo, getAllVideos, getVideoById, publishVideo, updateVideo } from "../controller/video.controller.js";
 const videoRouter=Router();
 
 videoRouter.route("/postVideo").post(verifyUser,upload.fields(
@@ -9,5 +9,9 @@ videoRouter.route("/postVideo").post(verifyUser,upload.fields(
      {name:"videoFile",maxCount:1}   
     ]
     ),publishVideo)
+videoRouter.route("/getallVideos").post(verifyUser,getAllVideos)
+videoRouter.route("/getVideoById").post(verifyUser,getVideoById)
+videoRouter.route("/updateVideo").patch(verifyUser,upload.single("thumbnail"),updateVideo)
+videoRouter.route("/deleteVideo").get(verifyUser,deleteVideo)
 
 export default videoRouter
