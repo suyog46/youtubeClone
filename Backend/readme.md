@@ -19,3 +19,26 @@ type:"module"
  email:test@gmail.com
  pasword:Test1@123
  http://localhost:4000/
+
+
+     [{
+          $match: {
+             title:{ $regex:"", $options: 'i' }
+          }
+        },
+        {
+          $sort: { createdAt:1} 
+        },
+        {
+          $skip: (1 - 1) * 3  
+        },
+        {
+          $limit: 3
+        },{
+            $lookup:  {
+                from:"users",
+            localField:"owner",
+            foreignField:"_id",
+            as:"result"
+        }
+    } ] 

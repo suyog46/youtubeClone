@@ -10,8 +10,8 @@ videoRouter.route("/postVideo").post(verifyUser,upload.fields(
     ]
     ),publishVideo)
 videoRouter.route("/getallVideos").post(verifyUser,getAllVideos)
-videoRouter.route("/getVideoById").post(verifyUser,getVideoById)
-videoRouter.route("/updateVideo").patch(verifyUser,upload.single("thumbnail"),updateVideo)
-videoRouter.route("/deleteVideo").get(verifyUser,deleteVideo)
+videoRouter.route("/getVideoById/:videoId").post(verifyUser,getVideoById)
+videoRouter.route("/updateVideo/:videoId").patch(verifyUser,upload.single("thumbnail"),updateVideo)
+videoRouter.route("/deleteVideo/:videoId").get(verifyUser,deleteVideo)
 
 export default videoRouter

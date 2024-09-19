@@ -3,6 +3,8 @@ import ApiResponse from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/apierror.js";
 import { cloudresult } from "../utils/Cloudinary.js";
 import { videoModel } from "../models/video.model.js";
+import mongoose from "mongoose";
+
 
 const publishVideo=asyncHandler(async(req,res)=>{
     const{title,description}=req.body
@@ -56,13 +58,17 @@ const getAllVideos=asyncHandler(async(req,res)=>{
     const query=req.query.query||'';
     const sortType=req.query.sort||'asc';
     const sortBy=req.query.sortBy||'createdAt';
-
+//query ma kehi napathauda
     const pageNumber=parseInt(page);
     const limitNumber=parseInt(limit);
     const sort= sortType === 'asc' ? 1 : -1 ;
 
+    console.log("sabai parameters"+"page is"+page+"limit is"+limit+"query is"+query+"sorttype is"+sort+"sortby is"+sortBy,pageNumber,limitNumber)
+
         
     const matchStage = query?{ title:{ $regex: query, $options: 'i' } }  :{};  //$options:i for case insesitive
+//  extra double quotes should not be included in the regex pattern, which can cause  query to not find any matches in the database.
+    console.log("matchstage",matchStage)
 
       const result = await videoModel.aggregate( [
     {
@@ -85,32 +91,26 @@ const getAllVideos=asyncHandler(async(req,res)=>{
         }
     } ]  );
 
+    console.log("return videos",result)
       if (result.length === 0) { //array return garxa ,ani empty pani huna sakxa
         throw new ApiError(404, "No videos found matching the query");
     }
-
-    const totalCount = await videoModel.aggregate([
-        {
-          $match: matchStage
-        },
-        {
-          $count: "total"
-        }
-      ]);
-
+console.log(
+    "legnth is",result.length
+)
+    const totalCount = result.length;
     
       if(!totalCount){
 throw new ApiError(404,"error in counting values")
       }
 
-  const totalResult=totalCount[0] ? totalCount[0].total : 0; 
 
 if(!result){
     throw new ApiError(400,"there was error in retrieving the video data")
 }
 return res
 .status(200)
-.json(new ApiResponse(200,{result,totalResult},"video retrieved succesfully"))
+.json(new ApiResponse(200,{result,totalCount},"video retrieved succesfully"))
 })
 
 
@@ -119,7 +119,7 @@ const getVideoById   = asyncHandler(async (req, res) => {
     if(!videoId){
         throw new ApiError(404,"videoId not found in the request")
     }
-    const objectId = mongoose.Types.ObjectId(videoId);
+    const objectId = new mongoose.Types.ObjectId(videoId);
 
     const videos =await videoModel.aggregate(
         [
@@ -152,10 +152,12 @@ const updateVideo = asyncHandler(async (req, res) => {
         }  
         
     const{title,description}=req.body
-    if(!(title)||description){
+    console.log("title,description",title,description)
+    if(!(title||description)){
         throw new ApiError(404,"title or description to be updated not found")
     }
-    const thumbnail=req.file?.thumbnail[0].path
+    console.log("=req.file",req.file)
+    const thumbnail=req.file?.path         
     if(!thumbnail){
         throw new ApiError(404,"thumbnail not found in the request file")
     }
