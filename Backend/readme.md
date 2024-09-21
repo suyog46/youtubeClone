@@ -18,7 +18,7 @@ type:"module"
  username:five
  email:test@gmail.com
  pasword:Test1@123
- http://localhost:4000/
+ http://localhost:4000
 
 
      [{
