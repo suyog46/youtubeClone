@@ -3,6 +3,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import router from "./router/user.route.js";
 import videoRouter from "./router/video.route.js";
+import playlistRouter from "./router/playlist.route.js";
 const app=express();
 
 app.use(cors(
@@ -19,5 +20,6 @@ app.use(cookieParser())
 
 app.use("/api/v1/users",router)
 app.use("/api/v1/videos",videoRouter)
+app.use("/api/v1/playlist",playlistRouter)
 
 export default app
