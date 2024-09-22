@@ -9,6 +9,4 @@ commentRouter.route("/getallComments/:videoId").post(verifyUser,getVideoComments
 commentRouter.route("/updateComment/:commentId").patch(verifyUser,updateComment)
 commentRouter.route("/deleteComment/:commentId").patch(verifyUser,updateComment)//left to  test
 
-
-
 export default commentRouter

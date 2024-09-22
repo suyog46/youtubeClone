@@ -5,6 +5,8 @@ import router from "./router/user.route.js";
 import videoRouter from "./router/video.route.js";
 import playlistRouter from "./router/playlist.route.js";
 import commentRouter from "./router/comment.route.js";
+import likeRouter from "./router/like.route.js";
+import subscribeRouter from "./router/subcription.route.js";
 const app=express();
 
 app.use(cors(
@@ -23,5 +25,8 @@ app.use("/api/v1/users",router)
 app.use("/api/v1/videos",videoRouter)
 app.use("/api/v1/playlist",playlistRouter)
 app.use("/api/v1/comment",commentRouter)
+app.use("/api/v1/likes",likeRouter)
+app.use("/api/v1/subscription",subscribeRouter)
+
 
 export default app

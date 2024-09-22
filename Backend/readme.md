@@ -18,6 +18,11 @@ type:"module"
  username:five
  email:test@gmail.com
  pasword:Test1@123
+
+username:channel
+email:channel@gmail.com
+password:Channel@123
+
  http://localhost:4000
 
 
