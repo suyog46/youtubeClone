@@ -4,7 +4,7 @@ dotenv.config({
 }
 )
 
-console.log(process.env.GOOGLE_CLIENT_ID,process.env.GOOGLE_CLIENT_SECRET)
+// console.log(process.env.GOOGLE_CLIENT_ID,process.env.GOOGLE_CLIENT_SECRET)
 import connectDb from "./db/index.js";
 import app from "./app.js";
 
