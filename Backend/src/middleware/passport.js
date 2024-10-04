@@ -2,10 +2,16 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import userModel from '../models/user.model.js'; // Import user model
 
+// import { env } from 'env';
+
+ const GOOGLE_CLIENT_ID=process.env.GOOGLE_CLIENT_ID||'859581558880-6gp4na0ot38e99vqg5afk366nvoq5ppc.apps.googleusercontent.com'
+ const GOOGLE_CLIENT_SECRET=process.env.GOOGLE_CLIENT_SECRET||'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'
+console.log("eta xu hgai ",GOOGLE_CLIENT_SECRET)
 // Google OAuth strategy configuration
 passport.use(new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID||'859581558880-6gp4na0ot38e99vqg5afk366nvoq5ppc.apps.googleusercontent.com',  
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET||'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',  
+
+  clientID:GOOGLE_CLIENT_ID,  
+  clientSecret: GOOGLE_CLIENT_SECRET,  
   callbackURL: "/api/v1/users/auth/google/callback" 
 },
 async (accessToken, refreshToken, profile, done) => {

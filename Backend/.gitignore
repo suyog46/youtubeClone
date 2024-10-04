@@ -1,0 +1,5 @@
+# Environment variables (sensitive credentials)
+.env
+
+# Log files
+*.log

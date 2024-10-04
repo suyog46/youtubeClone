@@ -1,11 +1,14 @@
 import dotenv from "dotenv"
-import connectDb from "./db/index.js";
-import app from "./app.js";
-
 dotenv.config({
     path:"./.env"
 }
 )
+
+console.log(process.env.GOOGLE_CLIENT_ID,process.env.GOOGLE_CLIENT_SECRET)
+import connectDb from "./db/index.js";
+import app from "./app.js";
+
+
 const port=process.env.port || 4000
 connectDb().then(()=>{
     app.listen(port,()=>{
