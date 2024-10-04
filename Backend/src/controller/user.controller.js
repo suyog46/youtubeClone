@@ -145,6 +145,8 @@ return res
 .status(200)
 .json(new ApiResponse(200,{},"accessToken regenerated successfully"))
 })
+
+
 const updateProfile=asyncHandler(async(req,res)=>{
     const{username,email}=req.body
     //json wa form bata pathauda aayena but comes through xx-url encoded
@@ -189,6 +191,7 @@ const getCurrentUser=asyncHandler(async(req,res)=>{
     .status(200)
     .json(new ApiResponse(200,user,"current user have been fetched"))
 })
+
 const updateProfilePicture=asyncHandler(async(req,res)=>{
 //patch bata milena
     const profilePath=req.file.path
@@ -325,6 +328,27 @@ return res
 .json(new ApiResponse(200,user[0].watchHistory,"Watch History is responded"))
 
 })
+
+
+// Google login controller
+const googleLogin = asyncHandler(async (req, res) => {
+    const user = req.user;  // This is set by Passport during Google OAuth
+  
+    if (!user) {
+      throw new ApiError(400, "Google login failed");
+    }
+  
+    const { access, refresh } = await generateAccessRefreshToken(user);
+  
+    res
+      .status(200)
+      .cookie("accessToken", access, { httpOnly: true, secure: true, sameSite: 'Strict' })
+      .cookie("refreshToken", refresh, { httpOnly: true, secure: true, sameSite: 'Strict' });
+  
+    const userInfo = await userModel.findById(user._id).select("-password -refreshToken");
+    res.status(200).json(new ApiResponse(200, userInfo, "User logged in successfully with Google"));
+  });
+  
 export {register,
     login,
     logout,
@@ -334,5 +358,6 @@ export {register,
     getUserChannelProfile,
     getWatchHistory,
     generateAccessToken,
-    changeCurrentPassword
+    changeCurrentPassword,
+    googleLogin
 }
